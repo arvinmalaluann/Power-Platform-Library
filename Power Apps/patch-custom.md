@@ -1,24 +1,27 @@
-# PowerApps: Patching a New Record (With and Without a Form)
+# PowerApps: Patching Records (New and Existing)
 
-This guide covers how to **patch (create)** new records in PowerApps using two different methods:
+This guide explains how to **patch (create or update)** records in PowerApps using three different methods:
 
-1. **Custom controls (no form)**
-2. **Using an existing form control**
+1. **Using custom controls (no form)**
+2. **Using an existing form**
+3. **Updating existing records using an ID**
 
 ---
 
-## 1. Patching a New Record Using Custom Controls (No Form)
+## 1. Creating a New Record Using Custom Controls (No Form)
 
 ### 📌 Scenario
-You are building a custom UI (e.g., TextInputs, Dropdowns) instead of a Form control, and want to save the data to a data source like SharePoint, Dataverse, or SQL.
+You’re designing a custom UI using controls like `TextInput`, `Dropdown`, etc., and you want to save new data directly to a data source like SharePoint, Dataverse, or SQL without using a form.
 
 ### ✅ Example Controls
-- TextInput: `txtName`, `txtAge`
-- Dropdown: `drpGender`
+- `txtName` (TextInput)
+- `txtAge` (TextInput)
+- `drpGender` (Dropdown)
 
 ### 🧪 Sample Data Source
-Assume a SharePoint list called `Employees` with columns:
-- `Title` (Text) → used for `Name`
+**SharePoint List:** `Employees`  
+**Columns:**
+- `Title` (Text) → used for Name
 - `Age` (Number)
 - `Gender` (Choice)
 
@@ -38,23 +41,22 @@ Patch(
 
 ### 🔍 Explanation
 
-* `Patch()` is used to create or update records.
-* `Defaults(Employees)` creates a blank record structure.
-* Inside the curly braces `{}`, map each field to the value from the control.
+* `Defaults(Employees)` initializes a blank record.
+* The third parameter defines the new values mapped from user inputs.
 
 ---
 
-## 2. Patching a New Record Using an Existing Form
+## 2. Creating a New Record Using a Form
 
 ### 📌 Scenario
 
-You are using a Form control (e.g., `Form1`) connected to a data source and you want to submit the form data programmatically.
+You are using a Form control (e.g., `Form1`) connected to your data source, and want to submit a new record programmatically.
 
 ### ✅ Setup
 
-* A form control: `Form1`
+* Form control: `Form1`
 * Data source: `Employees`
-* Mode: New (`NewForm(Form1)`)
+* Mode: `NewForm(Form1)`
 
 ### 🧩 Patch Syntax
 
@@ -66,7 +68,7 @@ Patch(
 )
 ```
 
-Or, more commonly for simplicity:
+Or more commonly:
 
 ```powerapps
 SubmitForm(Form1)
@@ -74,16 +76,51 @@ SubmitForm(Form1)
 
 ### 🔍 Explanation
 
-* `Form1.Updates` retrieves all field values from the form.
-* `SubmitForm(Form1)` is a shortcut that validates and submits the form data.
+* `Form1.Updates` returns the current values in the form.
+* `SubmitForm(Form1)` handles validation and submission.
+
+---
+
+## 3. Updating an Existing Record Using Its ID
+
+### 📌 Scenario
+
+You want to update an existing record by referencing its ID (e.g., from a variable or input), rather than relying on a form or gallery selection.
+
+### ✅ Example
+
+* Known ID: stored in `varRecordID`
+* New values from inputs: `txtName`, `txtAge`, `drpGender`
+
+### 🧩 Patch Syntax
+
+```powerapps
+Patch(
+    Employees,
+    LookUp(Employees, ID = varRecordID),
+    {
+        Title: txtName.Text,
+        Age: Value(txtAge.Text),
+        Gender: drpGender.Selected.Value
+    }
+)
+```
+
+### 🔍 Explanation
+
+* `LookUp()` retrieves the record with the given ID.
+* The third argument updates the fields.
+
+✅ *This method is useful when you want to patch a record after retrieving it through an API, variable, or lookup result.*
 
 ---
 
 ## 🧠 Tips
 
-* Use `If(Form1.Valid, SubmitForm(Form1))` to ensure data is valid before submission.
-* When using custom controls, handle validation manually before using `Patch()`.
-* Always use `Value()` to convert text inputs to numbers, and `Selected.Value` for dropdowns or choices.
+* Use `If(Form1.Valid, SubmitForm(Form1))` to validate before submission.
+* Use `Value()` to convert `TextInput` to numbers.
+* Use `Selected.Value` for dropdowns or choice fields.
+* Always verify that the ID exists before patching using it.
 
 ---
 
@@ -91,14 +128,14 @@ SubmitForm(Form1)
 
 | Issue                         | Fix                                               |
 | ----------------------------- | ------------------------------------------------- |
-| Delegation warning            | Ensure fields are supported by your data source   |
+| Delegation warning            | Use delegable functions; avoid complex LookUps    |
 | Text input for number field   | Wrap input with `Value(txtInput.Text)`            |
 | Dropdown not saving correctly | Use `drp.Selected.Value` or `drp.Selected.Result` |
-| Form not submitting           | Check if `Form1.Valid = true` before submission   |
+| Form not submitting           | Ensure `Form1.Valid` is `true` before submission  |
 
 ---
 
-## 🛠 Sample Button Code for Custom Controls
+## 🛠 Sample Button Code (Custom Controls)
 
 ```powerapps
 If(
@@ -120,7 +157,8 @@ If(
 
 ## ✅ Summary
 
-| Method                 | Use When                                | Best For             |
-| ---------------------- | --------------------------------------- | -------------------- |
-| Custom Patch (no form) | You want full UI control, custom layout | Advanced scenarios   |
-| Form + Patch/Submit    | You prefer a managed UI with validation | Simpler, quick forms |
+| Method                    | Use When                                 | Best For                |
+| ------------------------- | ---------------------------------------- | ----------------------- |
+| Custom Patch (no form)    | You want full control of UI              | Advanced custom layouts |
+| Form + Patch / SubmitForm | You want built-in validation & structure | Quick forms             |
+| Patch using ID            | You know which record to update directly | External triggers, APIs |
